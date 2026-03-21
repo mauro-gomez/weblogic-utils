@@ -10,6 +10,7 @@ import sys
 from weblogic.management.scripting.utils import WLSTUtil
 import argparse
 import commands
+import servers
 
 def get_server_runtimes():
     # only returns the currently running servers in the domain
@@ -23,8 +24,27 @@ def get_server_runtime_by_name(server_name):
             return serverRuntime
     return None
 
-def show_server_status(server_name):
-    server_runtime = get_server_runtime_by_name(server_name)
+def get_server_by_identifier(server_identifier):
+    server_list = get_server_list()
+    for server in server_list:
+        if str(server.number) == server_identifier or server.getName() == server_identifier:
+            return server
+    return None
+
+def get_server_list_from_identifiers(server_identifiers):
+    output_server_list = []
+
+    for identifier in server_identifiers:
+        server = get_server_by_identifier(identifier)
+        if server is not None:
+            output_server_list.append(server)
+        else:
+            raise ValueError("No server found with identifier: " + identifier)
+
+    return output_server_list
+
+def show_server_status(server):
+    server_runtime = get_server_runtime_by_name(server.getName())
     if server_runtime is not None:
         print "\n" + server_runtime.getName() + " " + server_runtime.getState()
         jvmRT = server_runtime.getJVMRuntime()
@@ -70,47 +90,57 @@ def show_server_status(server_name):
                     print testPool
 
     else:
-        print "*** No runtime information found for server: " + server_name
+        print "*** No runtime information found for server: " + server.getName()
         return None
 
         
-def show_server_thread_dump(server_name):
-    server_runtime = get_server_runtime_by_name(server_name)
+def show_server_thread_dump(server):
+    server_runtime = get_server_runtime_by_name(server.getName())
     if server_runtime is not None:
         jvmRT = server_runtime.getJVMRuntime()
         print("\n\n==========  BEGIN Thread Dump for server " + server_runtime.getName() + " ==========\n")
         print(jvmRT.getThreadStackDump())
         print("\n\n==========  END Thread Dump for server " + server_runtime.getName() + " ==========\n")
     else:
-        print "*** No runtime information found for server: " + server_name
+        print "*** No runtime information found for server: " + server.getName()
         return None
 
-def show_server_list_status(server_name_list):
+def show_server_list_status(server_list = []):
 
-    for server in server_name_list:
-        show_server_status(server['name'])
+    if len(server_list) == 0:
+        server_list = get_server_list()
 
-def show_server_list_thread_dump(server_name_list):
+    for server in server_list:
+        show_server_status(server)
 
-    for server in server_name_list:
-        show_server_thread_dump(server['name'])
+def show_server_list_thread_dump(server_list = []):
+
+    if len(server_list) == 0:
+        server_list = get_server_list()
+
+    for server in server_list:
+        show_server_thread_dump(server)
 
 def get_server_list():
-    cd('')
-    servers = cmo.getServers()
+
+    domainConfig()
+    cd('/')
+    tree_servers = cmo.getServers()
     server_list = []
-    for server in servers:
-        server_list.append({
-            'name': server.getName(),
-            'listen_port': server.getListenPort(),
-            'listen_port_ssl': server.getSSL().getListenPort() if server.getSSL() is not None else None,
-            'cluster': server.getCluster().getName() if server.getCluster() is not None else None,
-            'machine': server.getMachine().getName() if server.getMachine() is not None else None
-        })
+    for tree_server in tree_servers:
+
+        server = servers.Server(
+            name=tree_server.getName(),
+            listen_port=tree_server.getListenPort(),
+            listen_port_ssl=tree_server.getSSL().getListenPort() if tree_server.getSSL() is not None else None,
+            cluster=tree_server.getCluster().getName() if tree_server.getCluster() is not None else None,
+            machine=tree_server.getMachine().getName() if tree_server.getMachine() is not None else None
+        )
+        server_list.append(server)
     # order server_list by cluster, machine, server name and port ans assign a sequential number to each server in the list
-    server_list = sorted(server_list, key=lambda x: (x['cluster'] or '', x['machine'] or '', x['name'], x['listen_port'] or 0))
+    server_list = sorted(server_list, key=lambda x: (x.getCluster() or '', x.getMachine() or '', x.getName(), x.getListenPort() or 0))
     for i, server in enumerate(server_list):
-        server['number'] = i + 1
+        server.number = i + 1
 
     return server_list
 
@@ -122,28 +152,49 @@ def show_server_list():
     print("-" * 85)
     for server in server_list:
         print("{:<5} {:<20} {:<10} {:<10} {:<20} {:<20}".format(
-            server['number'],
-            server['name'],
-            server['listen_port'] if server['listen_port'] is not None else 'N/A',
-            server['listen_port_ssl'] if server['listen_port_ssl'] is not None else 'N/A',
-            server['cluster'] if server['cluster'] is not None else 'N/A',
-            server['machine'] if server['machine'] is not None else 'N/A'
+            server.number,
+            server.getName(),
+            server.getListenPort() if server.getListenPort() is not None else 'N/A',
+            server.getListenPortSSL() if server.getListenPortSSL() is not None else 'N/A',
+            server.getCluster() if server.getCluster() is not None else 'N/A',
+            server.getMachine() if server.getMachine() is not None else 'N/A'
         ))
-        state(server['name'],'Server')
+        state(server.getName(),'Server')
     print("-" * 85)
     print("\n")
 
 def show_all_server_list_status():
     all_servers_list = get_server_list()
     for server in all_servers_list:
-        show_server_status(server['name'])
+        show_server_status(server)
+
+def start_server(server):
+    print "Starting server: " + server.getName()
+    start(server.getName(), 'Server', block='false')
+
+def start_server_list(server_list):
+    for server in server_list:
+        start_server(server)
+
+def stop_server(server):
+    print "Stopping server: " + server.getName()
+    shutdown(server.getName(), 'Server', force='true', block='false')
+
+def stop_server_list(server_list):
+    for server in server_list:
+        stop_server(server)
 
 def create_command_executor():
 
     return commands.CommandExecutor(
         commands=[
-            commands.Command(name='quit', description='Exit interactive mode', method=None, is_quit_command=True),
-            commands.Command(name='list', description='List all servers in the domain', method=globals().get('show_server_list'))
+            commands.Command(name='quit', description='Exit interactive mode', synonyms=['exit', 'q', 'x'], is_quit_command=True),
+            commands.Command(name='list', description='Lists all servers in the domain', synonyms=['ls'], method=globals().get('show_server_list')),
+            commands.Command(name='status', description='Shows status for a list of servers. If no server is specified, show status for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['stat'], method=globals().get('show_server_list_status'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='tdump', description='Shows thread dump for a list of servers. If no server is specified, show thread dump for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['td'], method=globals().get('show_server_list_thread_dump'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='help', description='Shows this help message', synonyms=['h', '?'], is_help_command=True),
+            commands.Command(name='start', description='Starts a server or a list of servers', params_description='[server number | server name] ... [server number | server name]', method=globals().get('start_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='stop', description='Stops a server or a list of servers', params_description='[server number | server name] ... [server number | server name]', method=globals().get('stop_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers'))
         ]
     )
 
@@ -153,6 +204,9 @@ def interactive_loop():
 
     while True:
         user_input = raw_input(":: ")
+        if user_input.strip() == "":
+            continue
+
         command_result = command_executor.execute_command(user_input)
         if command_result is not None:
             if command_result.get_is_quit_command():
@@ -164,6 +218,7 @@ def interactive_loop():
             else:
                 print "Command execution failed. Message:"
                 print command_result.get_message()
+            print "\n"
 
 def process(username, password, admin_url, get_thread_dumps=False, interactive_mode=False):
     
