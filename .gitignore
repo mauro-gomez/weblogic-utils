@@ -205,3 +205,6 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Ignore output files folder contents but not the folder itself, as it is needed for the script to run without errors.
+output_files/*
