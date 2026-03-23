@@ -8,15 +8,15 @@ The script can be run in a non-interactive mode to get status and thread dumps f
 
 To check status for all servers in the domain and get thread dumps for each server:
 ```
-   java weblogic.WLST domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --get_thread_dumps
+   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --get_thread_dumps
 ```
 
 To check status for all servers in the domain without getting thread dumps:
 ```
-   java weblogic.WLST domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1
+   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1
 ```
 
 To start interactive mode:
 ```
-   java weblogic.WLST domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --interactive
+   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --interactive
 ```
