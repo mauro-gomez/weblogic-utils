@@ -30,10 +30,12 @@ quit: Exit interactive mode
     Synonyms: exit, q, x
 
 list: Lists all servers in the domain
+
     Usage: list
     Synonyms: ls
 
 status: Shows status for a list of servers. If no server is specified, show status for all servers
+
     Usage: status (nothing) or [server number | server name] ... [server number | server name]
     Synonyms: stat
 
