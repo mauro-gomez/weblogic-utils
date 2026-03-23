@@ -308,7 +308,7 @@ def create_command_executor():
 def set_session_values_report(parameters_sequence):
 
     global config_properties
-
+ 
     session_values_report = "Current session values:\n"
     if len(parameters_sequence) > 0:
         session_variable = None
