@@ -25,39 +25,37 @@ To start interactive mode:
 
 You will be prompted for operation commands. The options are:
 
-quit: Exit interactive mode
-    Usage: quit
-    Synonyms: exit, q, x
+**quit** Exit interactive mode
+Usage: quit
+Synonyms: exit, q, x
 
-list: Lists all servers in the domain
+**list**: Lists all servers in the domain
+Usage: list
+Synonyms: ls
 
-    Usage: list
-    Synonyms: ls
+**status**: Shows status for a list of servers. If no server is specified, show status for all servers
+Usage: status (nothing) or [server number | server name] ... [server number | server name]
+Synonyms: stat
 
-status: Shows status for a list of servers. If no server is specified, show status for all servers
+**tdump**: Shows thread dump for a list of servers. If no server is specified, show thread dump for all servers
+Usage: tdump (nothing) or [server number | server name] ... [server number | server name]
+Synonyms: td
 
-    Usage: status (nothing) or [server number | server name] ... [server number | server name]
-    Synonyms: stat
+**help**: Shows this help message
+Usage: help
+Synonyms: h, ?
 
-tdump: Shows thread dump for a list of servers. If no server is specified, show thread dump for all servers
-    Usage: tdump (nothing) or [server number | server name] ... [server number | server name]
-    Synonyms: td
+**start**: Starts a server or a list of servers
+Usage: start (all |  [server number | server name] ... [server number | server name] )
 
-help: Shows this help message
-    Usage: help
-    Synonyms: h, ?
+**stop**: Stops a server or a list of servers
+Usage: stop (all | [server number | server name] ... [server number | server name] )
 
-start: Starts a server or a list of servers
-    Usage: start [server number | server name] ... [server number | server name]
+**set**: Shows or sets session variables. To show all session variables, run "set". To show a specific session variable, run "set [variable name]". To set a session variable, run "set [variable name] [new value]"
+Usage: set (nothing) or [variable name] or [variable name] [value]
 
-stop: Stops a server or a list of servers
-    Usage: stop [server number | server name] ... [server number | server name]
-
-set: Shows or sets session variables. To show all session variables, run "set". To show a specific session variable, run "set [variable name]". To set a session variable, run "set [variable name] [value]"
-    Usage: set (nothing) or [variable name] or [variable name] [value]
-
-reset: Resets session variables to default values from config file
-    Usage: reset
+**reset**: Resets session variables to default values from config file
+Usage: reset
 
 .: Repeat latest command
   Usage: .
