@@ -86,22 +86,17 @@ class CommandExecutor:
 
         for command in self.commands:
             if command.matches_command_line(command_line_sequence):
-                try:
-                    if command.is_help_command:
+                if command.is_help_command:
+                    return CommandResult(
+                        True, 
+                        data="\n".join([str(cmd) + '\n' for cmd in self.commands]), 
+                        is_quit_command=command.is_quit_command
+                    )
+                else:
+                    return CommandResult(
+                        True, 
+                        data=command.execute(command_line_sequence), 
+                        is_quit_command=command.is_quit_command
+                    )
 
-                        return CommandResult(
-                            True, 
-                            data="\n".join([str(cmd) + '\n' for cmd in self.commands]), 
-                            is_quit_command=command.is_quit_command
-                        )
-                    else:
-                        return CommandResult(
-                            True, 
-                            data=command.execute(command_line_sequence), 
-                            is_quit_command=command.is_quit_command
-                        )
-
-                except Exception as e:
-                    traceback.print_exc()
-                    return CommandResult(False, message=str(e))
         return CommandResult(False, message="Unknown command '" + command_line_sequence[0] + "'")

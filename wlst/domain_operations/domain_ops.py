@@ -1,18 +1,6 @@
 #
 # domain_ops.py
 #
-# WLST script for Weblogic domain operations such as checking server status, getting thread dumps, and starting/stopping servers. 
-# The script can be run in a non-interactive mode to get status and thread dumps for all servers in the domain, 
-# or in an interactive mode where the user can execute commands to check status, get thread dumps, and start/stop servers on demand.
-#
-# Usage:
-# 1) To check status for all servers in the domain and get thread dumps for each server:
-#    java weblogic.WLST domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --get_thread_dumps
-# 2) To check status for all servers in the domain without getting thread dumps:
-#    java weblogic.WLST domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1
-# 3) To start interactive mode:
-#    java weblogic.WLST domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --interactive
-#
 
 # Import necessary modules
 import sys
@@ -63,6 +51,10 @@ def get_server_by_identifier(server_identifier):
             return server
     return None
 
+class NoServerFound(Exception):
+    """Exception raised when no server is found with a given identifier."""
+    pass
+
 def get_server_list_from_identifiers(server_identifiers):
     output_server_list = []
 
@@ -74,7 +66,7 @@ def get_server_list_from_identifiers(server_identifiers):
             if server is not None:
                 output_server_list.append(server)
             else:
-                raise ValueError("No server found with identifier: " + identifier)
+                raise NoServerFound(identifier)
 
     return output_server_list
 
@@ -243,62 +235,78 @@ def show_server_list():
             server.getCluster() if server.getCluster() is not None else 'N/A',
             server.getMachine() if server.getMachine() is not None else 'N/A'
         ))
-        state(server.getName(),'Server')
+
+        try:
+            state(server.getName(),'Server')
+        except Exception as e:
+            print("Error retrieving server " + server.getName() + " state: " + str(e))
+
     print("-" * 85)
     print("\n")
 
-def start_server(server):
+def confirm_action(action_description, servers_involved):
 
+    print("You are about to " + action_description + " the following servers:")
+    for server in servers_involved:
+        print("- " + server.getName())
+    confirmation = raw_input("Are you sure you want to proceed? (yes/no): ")
+    return confirmation.lower() == 'yes'
+
+def filtered_server_list(server_list):
     global config_properties
-
     cluster_filter = config_properties.get('cluster_name', 'all')
     admin_server_name = config_properties.get('__admin_server_name', 'AdminServer')
 
-    if server.getName() == admin_server_name:
-        return
+    # Exclude Admin Server and filter by cluster if cluster filter is set
+    if cluster_filter == 'all':
+        return [server for server in server_list if server.getName() != admin_server_name]
+    else:
+        return [server for server in server_list if server.getCluster() == cluster_filter and server.getName() != admin_server_name]
 
-    if cluster_filter != 'all' and server.getCluster() != cluster_filter:
-        print "Skipping server '" + server.getName() + "' as it does not belong to cluster '" + cluster_filter + "'"
-        return
-        
+def start_server(server):
+     
     print "Starting server: " + server.getName()
     start(server.getName(), 'Server', block='false')
 
 def start_server_list(server_list):
-    for server in server_list:
-        start_server(server)
+
+    filtered_list = filtered_server_list(server_list)
+
+    if len(filtered_list) == 0:
+        print "No servers to start after applying filters."
+        return
+
+    if confirm_action("start", filtered_list):
+        for server in filtered_list:
+            start_server(server)
 
 def stop_server(server):
-    global config_properties
-
-    cluster_filter = config_properties.get('cluster_name', 'all')
-    admin_server_name = config_properties.get('__admin_server_name', 'AdminServer')
-
-    if server.getName() == admin_server_name:
-        return
-
-    if cluster_filter != 'all' and server.getCluster() != cluster_filter:
-        print "Skipping server '" + server.getName() + "' as it does not belong to cluster '" + cluster_filter + "'"
-        return
 
     print "Stopping server: " + server.getName()
     shutdown(server.getName(), 'Server', force='true', block='false')
 
 def stop_server_list(server_list):
-    for server in server_list:
-        stop_server(server)
+    filtered_list = filtered_server_list(server_list)
+
+    if len(filtered_list) == 0:
+        print "No servers to stop after applying filters."
+        return
+
+    if confirm_action("stop", filtered_list):
+        for server in filtered_list:
+            stop_server(server)
 
 def create_command_executor():
 
     return commands.CommandExecutor(
         commands=[
             commands.Command(name='quit', description='Exit interactive mode', synonyms=['exit', 'q', 'x'], is_quit_command=True),
-            commands.Command(name='list', description='Lists all servers in the domain', synonyms=['ls'], method=globals().get('show_server_list')),
+            commands.Command(name='list', description='Lists all servers in the domain', synonyms=['ls', 'll'], method=globals().get('show_server_list')),
             commands.Command(name='status', description='Shows status for a list of servers. If no server is specified, show status for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['stat'], method=globals().get('show_server_list_status_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='tdump', description='Shows thread dump for a list of servers. If no server is specified, show thread dump for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['td'], method=globals().get('show_server_list_thread_dump_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='help', description='Shows this help message', synonyms=['h', '?'], is_help_command=True),
-            commands.Command(name='start', description='Starts a server or a list of servers', params_description='[server number | server name] ... [server number | server name]', method=globals().get('start_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
-            commands.Command(name='stop', description='Stops a server or a list of servers', params_description='[server number | server name] ... [server number | server name]', method=globals().get('stop_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='start', description='Starts a server or a list of servers', params_description='all | [server number | server name] ... [server number | server name]', method=globals().get('start_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='stop', description='Stops a server or a list of servers', params_description='all | [server number | server name] ... [server number | server name]', method=globals().get('stop_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='set', description='Shows or sets session variables. To show all session variables, run "set". To show a specific session variable, run "set [variable name]". To set a session variable, run "set [variable name] [value]"', params_description='(nothing) or [variable name] or [variable name] [value]', method=globals().get('set_session_values_report')),
             commands.Command(name='reset', description='Resets session variables to default values from config file', method=globals().get('reset_session_values_report')),
             commands.Command(name='.', description='Repeat latest command'),
@@ -361,38 +369,51 @@ def interactive_loop():
 
     while True:
 
-        prompt = ":: "
+        try:
+            prompt = ":: "
 
-        if config_properties.get('cluster_name', 'all') != 'all':
-            prompt = "[" + config_properties.get('cluster_name') + "] " + prompt
+            if config_properties.get('cluster_name', 'all') != 'all':
+                prompt = "[" + config_properties.get('cluster_name') + "] " + prompt
 
-        user_input = raw_input(prompt)
+            user_input = raw_input(prompt)
 
-        if user_input.strip() == "":
-            continue
-
-        if user_input.strip() == ".":
-            if previous_user_input is None:
-                print "No previous command to repeat."
+            if user_input.strip() == "":
                 continue
-            else:
-                user_input = previous_user_input
-                print "Repeating command: " + user_input
-        else:
-            previous_user_input = user_input
 
-        command_result = command_executor.execute_command(user_input)
-        if command_result is not None:
-            if command_result.get_is_quit_command():
-                print "Exiting interactive mode."
-                break
-            elif command_result.get_success():
-                if command_result.get_data() is not None:
-                    print command_result.get_data()
+            if user_input.strip() == ".":
+                if previous_user_input is None:
+                    print "No previous command to repeat."
+                    continue
+                else:
+                    user_input = previous_user_input
+                    print "Repeating command: " + user_input
             else:
-                print "Command execution failed. Message:"
-                print command_result.get_message()
+                previous_user_input = user_input
+
+            command_result = command_executor.execute_command(user_input)
+            
+            if command_result is not None:
+                if command_result.get_is_quit_command():
+                    print "Exiting interactive mode."
+                    break
+                elif command_result.get_success():
+                    if command_result.get_data() is not None:
+                        print command_result.get_data()
+                else:
+                    print "Command execution failed. Message:"
+                    print command_result.get_message()
+                print "\n"
+
+        except NoServerFound as nsf:
+            print "No server found for identifier: " + nsf.message + "\n\n"
+
+        except Exception as e:
+            print "Error in loop: " + str(e)
             print "\n"
+
+            if config_properties.get('debug_mode', 'false').lower() == 'true':
+                import traceback
+                traceback.print_exc()
 
 def process(username, password, admin_url, get_thread_dumps=False, interactive_mode=False):
             
