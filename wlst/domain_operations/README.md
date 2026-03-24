@@ -74,9 +74,13 @@ Usage: .
 Session variables controls application behaviour and are loaded from the config/config.properties file. All variables can be overriden during the interactive session, except for those starting with a "_".
 
 **__admin_server_name** Admin Server name. Used to skip Admin Server from start/stop operations.
+
 **output_files_path** Output files path
+
 **write_thread_dump_to_file** When *true*, thread dumps will be written to the output files path. Otherwise, output goes to stdout.
+
 **cluster_name** When *all*, all servers are displayed or started/stopped, regardless the cluster they belong to. Specify a cluster name, and all operations will affect only servers in that cluster.
+
 **debug_mode** When *true*, show tracebaks in case of error. Otherwise, no tracebacks are displayed.
 
 
