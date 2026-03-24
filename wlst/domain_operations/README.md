@@ -8,25 +8,25 @@ Domain Ops script needs a Weblogic user in *Monitors* security group for almost 
 Domain configuration changes are out of the scope of this script.
 
 
-## Usage
+## Start the WLST script
 
 Show status for all servers in the domain.
 ```
-   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1
+   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username myuser --password mypass
 ```
 
 Show status for all servers in the domain and get one single thread dump for each server. If 'write_thread_dump_to_file' parameter is set to *true* in config/config.properties, thread dumps will be written to the location set by 'output_files_path' parameter.
 ```
-   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --get_thread_dumps
+   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username myuser --password mypass --get_thread_dumps
 ```
 
 To start interactive mode:
 ```
-   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username weblogic --password welcome1 --interactive
+   $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username myuser --password mypass --interactive
 ```
 
 
-## How to start, using shell script
+## Start using shell script
 
 1) Edit run.sh script and set your target wlst.sh location, weblogic username and admin URL
 2) Execute and provide the user password:
