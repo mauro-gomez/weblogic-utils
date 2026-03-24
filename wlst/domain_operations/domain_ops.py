@@ -12,6 +12,8 @@ import servers
 config_properties_file_path = "config/config.properties"
 config_properties = {}
 
+domain_context = None
+
 def get_properties_from_file(file_path):
     properties = {}
     try:
@@ -34,7 +36,11 @@ def load_config_properties():
 
 def get_server_runtimes():
     # only returns the currently running servers in the domain
-    domainRuntime()
+    global domain_context
+    if domain_context != "runtime":
+        domainRuntime()
+        domain_context = "runtime"
+
     return domainRuntimeService.getServerRuntimes()
 
 def get_server_runtime_by_name(server_name):
@@ -177,7 +183,7 @@ def show_server_thread_dump_report(server, repeated=False):
         try:
             with open(thread_dump_filename, 'w') as f:
                 f.write(thread_dump_report)
-            print("Thread dump for server '" + server.getName() + "' has been written to file: " + thread_dump_filename)
+            print("Thread dumps for server '" + server.getName() + "' had been written to file: " + thread_dump_filename)
         except Exception as e:
             print("Error writing thread dump to file: " + str(e))
             print("Printing thread dump to console instead:")
@@ -210,9 +216,14 @@ def show_server_list_repeated_thread_dump_report(server_list = []):
 
 def get_server_list():
 
-    domainConfig()
-    cd('/')
+    global domain_context
+
+    if domain_context != "config":
+        domainConfig()
+        domain_context = "config"
+
     tree_servers = cmo.getServers()
+
     server_list = []
     for tree_server in tree_servers:
 
@@ -325,8 +336,8 @@ def create_command_executor():
             commands.Command(name='quit', description='Exit interactive mode', synonyms=['exit', 'q', 'x'], is_quit_command=True),
             commands.Command(name='list', description='Lists all servers in the domain', synonyms=['ls', 'll'], method=globals().get('show_server_list')),
             commands.Command(name='status', description='Shows status for a list of servers. If no server is specified, show status for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['stat'], method=globals().get('show_server_list_status_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
-            commands.Command(name='tdump', description='Shows thread dump for a list of servers. If no server is specified, show thread dump for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['td'], method=globals().get('show_server_list_thread_dump_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
-            commands.Command(name='rtdump', description='Shows repeated thread dump for a list of servers. If no server is specified, show repeated thread dump for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['rtd', 'rt'], method=globals().get('show_server_list_repeated_thread_dump_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='tdump', description='Shows a single thread dump for a list of servers. If no server is specified, show the thread dump for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['td'], method=globals().get('show_server_list_thread_dump_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='rtdump', description='Shows repeated thread dumps for a list of servers. If no server is specified, show repeated thread dumps for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['rtd', 'rt'], method=globals().get('show_server_list_repeated_thread_dump_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='help', description='Shows this help message', synonyms=['h', '?'], is_help_command=True),
             commands.Command(name='start', description='Starts a server or a list of servers', params_description='all | [server number | server name] ... [server number | server name]', method=globals().get('start_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='stop', description='Stops a server or a list of servers', params_description='all | [server number | server name] ... [server number | server name]', method=globals().get('stop_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
