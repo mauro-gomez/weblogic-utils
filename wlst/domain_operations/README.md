@@ -20,7 +20,7 @@ Show status for all servers in the domain and get one single thread dump for eac
    $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username myuser --password mypass --get_thread_dumps
 ```
 
-To start in interactive mode. See [interactive Mode](#Interactive-Mode) section for a complete description.
+To start in interactive mode. See [Interactive Mode](#Interactive-Mode) section for a complete description.
 ```
    $FMW_HOME/oracle_common/common/bin/wlst.sh domain_ops.py --admin_url t3://localhost:7001 --username myuser --password mypass --interactive
 ```
