@@ -129,13 +129,27 @@ def show_server_status_report(server):
     server_status_report = get_server_status_report(server)
     print(server_status_report)
         
-def get_server_thread_dump_report(server):
+def get_server_thread_dump_report(server, repeated=False):
+    
+    global config_properties
+    if repeated:
+        thread_dump_count = int(config_properties.get('repeated_thread_dump_count', '3'))
+        thread_dump_interval_seconds = int(config_properties.get('repeated_thread_dump_interval_seconds', '5'))
+    else:
+        thread_dump_count = 1
+        thread_dump_interval_seconds = 0
     thread_dump_report = ""
     server_runtime = get_server_runtime_by_name(server.getName())
     if server_runtime is not None:
         jvmRT = server_runtime.getJVMRuntime()
         thread_dump_report += "\n\n==========  BEGIN Thread Dump for server " + server_runtime.getName() + " ==========\n"
-        thread_dump_report += jvmRT.getThreadStackDump()
+        for i in range(thread_dump_count):
+            print("Collecting thread dump " + str(i+1) + " of " + str(thread_dump_count) + " for server '" + server.getName() + "'...")
+            thread_dump_report += jvmRT.getThreadStackDump()
+            if i < thread_dump_count - 1:
+                import java.lang.Thread as Thread
+                Thread.sleep(thread_dump_interval_seconds * 1000)
+
         thread_dump_report += "\n\n==========  END Thread Dump for server " + server_runtime.getName() + " ==========\n"
         return thread_dump_report
     else:
@@ -153,10 +167,10 @@ def build_thread_dump_filename(server):
 
     return thread_dump_filename
 
-def show_server_thread_dump_report(server):
+def show_server_thread_dump_report(server, repeated=False):
     global config_properties
 
-    thread_dump_report = get_server_thread_dump_report(server)
+    thread_dump_report = get_server_thread_dump_report(server, repeated)
 
     if config_properties.get('write_thread_dump_to_file', 'false').lower() == 'true':
         thread_dump_filename = build_thread_dump_filename(server)
@@ -184,7 +198,15 @@ def show_server_list_thread_dump_report(server_list = []):
         server_list = get_server_list()
 
     for server in server_list:
-        show_server_thread_dump_report(server)
+        show_server_thread_dump_report(server, repeated=False)
+
+def show_server_list_repeated_thread_dump_report(server_list = []):
+
+    if len(server_list) == 0:
+        server_list = get_server_list()
+
+    for server in server_list:
+        show_server_thread_dump_report(server, repeated=True)
 
 def get_server_list():
 
@@ -304,6 +326,7 @@ def create_command_executor():
             commands.Command(name='list', description='Lists all servers in the domain', synonyms=['ls', 'll'], method=globals().get('show_server_list')),
             commands.Command(name='status', description='Shows status for a list of servers. If no server is specified, show status for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['stat'], method=globals().get('show_server_list_status_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='tdump', description='Shows thread dump for a list of servers. If no server is specified, show thread dump for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['td'], method=globals().get('show_server_list_thread_dump_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
+            commands.Command(name='rtdump', description='Shows repeated thread dump for a list of servers. If no server is specified, show repeated thread dump for all servers', params_description='(nothing) or [server number | server name] ... [server number | server name]', synonyms=['rtd', 'rt'], method=globals().get('show_server_list_repeated_thread_dump_report'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='help', description='Shows this help message', synonyms=['h', '?'], is_help_command=True),
             commands.Command(name='start', description='Starts a server or a list of servers', params_description='all | [server number | server name] ... [server number | server name]', method=globals().get('start_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
             commands.Command(name='stop', description='Stops a server or a list of servers', params_description='all | [server number | server name] ... [server number | server name]', method=globals().get('stop_server_list'), preprocess_parameters_method=globals().get('get_server_list_from_identifiers')),
