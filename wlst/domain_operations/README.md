@@ -24,7 +24,7 @@ To start interactive mode:
 ## How to start, using shell script
 
 1) Edit run.sh script and set your target wlst.sh location, weblogic username and admin URL
-2) Execute and provide theuser password:
+2) Execute and provide the user password:
 
 ```
 ./run.sh
