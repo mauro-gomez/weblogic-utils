@@ -3,7 +3,7 @@
 WLST script for Weblogic domain operations such as checking server status, getting thread dumps, and starting/stopping servers. 
 The script can be run in a non-interactive mode to get status and thread dumps for all servers in the domain, or in an interactive mode where the user can execute commands to check status, get thread dumps, and start/stop servers on demand.
 
-Domain Ops script needs a weblogic user in *Monitors* security group for almost all commands. Fot start/stop commands, the user must belong at least to *Operators* group. 
+Domain Ops script needs a Weblogic user in *Monitors* security group for almost all commands. Fot start/stop commands, the user must belong at least to *Operators* group. 
 
 Domain configuration changes are out of the scope of this script.
 
