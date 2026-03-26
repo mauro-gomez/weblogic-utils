@@ -39,19 +39,19 @@ Steps to install the lightweight middleware bundle
 
 4) Unzip the downloaded bundle to fmw_14.1.1.0.0_wls_lite_quick_generic.jar.For example:
 ```
-cd /u01
+cd /u01/app/oracle/middleware
 unzip fmw_14.1.1.0.0_wls_lite_quick_Disk1_1of1.zip
 (fmw_14.1.1.0.0_wls_lite_quick_generic.jar uncompressed)
 ```
 
 5) Prepare an empty new folder for the middeware home. For example:
 ```
-mkdir -p /u01/Oracle_1411_lite
+mkdir -p /u01/app/oracle/middleware/Oracle_Home1411_Lite
 ```
 6) Execute the installation. For example:
 ```
-cd /u01/Oracle_1411_lite
-$JAVA_HOME/bin/java .jar fmw_14.1.1.0.0_wls_lite_quick_generic.jar
+cd /u01/app/oracle/middleware/Oracle_Home1411_Lite
+$JAVA_HOME/bin/java -jar ../fmw_14.1.1.0.0_wls_lite_quick_generic.jar
 ```
 
 
