@@ -7,6 +7,53 @@ Domain Ops script needs a Weblogic user in *Monitors* security group for almost 
 
 Domain configuration changes are out of the scope of this script.
 
+## Supported WebLogic versions
+
+The script supports WebLogic 12c, 14.1.1, 14.1.2 and 15.1.1 target domain runtimes.
+
+## Prerequisites
+
+### Connection user
+
+The user needs Operator privileges.
+
+### Local binaries
+
+#### WebLogic 12c as target
+
+WebLogic 12c version as a target domain, has special considerations. Since the Domain Ops script requires Jython 2.7 libraries, which are not supported in WebLogic 12c, a minimal WebLogic 14 home installation is needed to run the Domain Ops script using the wlst.sh script from the home binaries. In this case, you can download and apply the Oracle WebLogic Server 14c (14.1.1.0) Quick Installer from https://www.oracle.com/middleeast/middleware/technologies/weblogic-server-downloads.html.
+
+#### WebLogic 14c and 15c as target
+
+For 14c and 15c target WebLogic domain versions, you can invoke wlst.sh from the same WebLogic Home binaries in the server machine, or using the minimal middleware binaries from the mentioned WLS 14.1.1 Quick Installer. The WLS 14.1.1 Quick Installer, which offers basic needed features, comes handy if you want to invoke the Domain Ops script from a remote client with a small middleware binaries folder. 
+
+#### WebLogic 14.1.1 Quick Installer
+
+Steps to install the lightweight middleware bundle
+
+1) Ensure Java JDK 8 is already installed. You can download it from here https://www.oracle.com/latam/java/technologies/javase/javase8-archive-downloads.html
+
+2) Jump to https://www.oracle.com/middleeast/middleware/technologies/weblogic-server-downloads.html
+
+3) Click and download the bundle "fmw_14.1.1.0.0_wls_lite_quick_Disk1_1of1.zip" from the link "Quick Installer for Mac OSX, Windows and Linux (253 MB)"
+
+4) Unzip the downloaded bundle to fmw_14.1.1.0.0_wls_lite_quick_generic.jar.For example:
+```
+cd /u01
+unzip fmw_14.1.1.0.0_wls_lite_quick_Disk1_1of1.zip
+(fmw_14.1.1.0.0_wls_lite_quick_generic.jar uncompressed)
+```
+
+5) Prepare an empty new folder for the middeware home. For example:
+```
+mkdir -p /u01/Oracle_1411_lite
+```
+6) Execute the installation. For example:
+```
+cd /u01/Oracle_1411_lite
+$JAVA_HOME/bin/java .jar fmw_14.1.1.0.0_wls_lite_quick_generic.jar
+```
+
 
 ## Start the WLST script
 

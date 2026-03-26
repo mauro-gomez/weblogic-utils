@@ -74,8 +74,8 @@ class CommandResult:
 
 class CommandExecutor:
 
-    def __init__(self, commands=None):
-        self.commands = commands if commands is not None else []
+    def __init__(self, commands=[]):
+        self.commands = commands
 
     def register_command(self, command):
         self.commands.append(command)

@@ -453,6 +453,8 @@ def process(username, password, admin_url, get_thread_dumps=False, interactive_m
             
     load_config_properties()
 
+    ## SSL
+    System.setProperty('weblogic.security.SSL.ignoreHostnameVerification', 'true')
     connect(username, password, admin_url)
 
     show_server_list()
