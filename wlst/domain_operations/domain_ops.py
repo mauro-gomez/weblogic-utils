@@ -8,9 +8,14 @@ from weblogic.management.scripting.utils import WLSTUtil
 import argparse
 import commands
 import servers
+import subprocess
 
 config_properties_file_path = "config/config.properties"
 config_properties = {}
+
+environment_properties_file_path = "config/weblogic_envs.properties"
+environment_properties = {}
+current_environment_id = None
 
 domain_context = None
 
@@ -30,9 +35,35 @@ def get_properties_from_file(file_path):
         print "Error loading properties from file: " + str(e)
     return properties
 
+def get_environment_properties_from_file(file_path):
+    env_properties = {}
+    try:
+        with open(file_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    if line.startswith('[') and line.endswith(']'):
+                        env_id = line[1:-1].strip()
+                        env_properties[env_id] = {}
+                    else:
+                        key_value = line.split('=', 1)
+                        if len(key_value) == 2 and env_id is not None:
+                            key = key_value[0].strip()
+                            value = key_value[1].strip()
+                            env_properties[env_id][key] = value
+
+    except Exception as e:
+        print "Error loading environment properties from file: " + str(e)
+    return env_properties
+
+
 def load_config_properties():
     global config_properties
     config_properties = get_properties_from_file(config_properties_file_path)
+
+def load_environment_properties():
+    global environment_properties
+    environment_properties = get_environment_properties_from_file(environment_properties_file_path)
 
 def get_server_runtimes():
     # only returns the currently running servers in the domain
@@ -214,6 +245,16 @@ def show_server_list_repeated_thread_dump_report(server_list = []):
     for server in server_list:
         show_server_thread_dump_report(server, repeated=True)
 
+def get_domain_name():
+
+    global domain_context
+
+    if domain_context != "config":
+        domainConfig()
+        domain_context = "config"
+
+    return cmo.getName()
+
 def get_server_list():
 
     global domain_context
@@ -248,7 +289,9 @@ def show_server_list():
     cluster_filter = config_properties.get('cluster_name', 'all')
 
     server_list = get_server_list()
-    print("\nServer List:")
+    domain_name = get_domain_name()
+    
+    print("\nServer List for domain: " + domain_name)
     if cluster_filter != 'all':
         print("filtered by cluster: " + cluster_filter)
 
@@ -396,6 +439,8 @@ def reset_session_values_report(parameters_sequence):
 def interactive_loop():
 
     global config_properties
+    global environment_properties
+    global current_environment_id
 
     command_executor = create_command_executor()
 
@@ -406,10 +451,15 @@ def interactive_loop():
         try:
             prompt = ":: "
 
+            if current_environment_id is not None:
+                base_prompt = environment_properties[current_environment_id].get('environment_name', current_environment_id) + " "
+            else:
+                base_prompt = ""
+
             if config_properties.get('cluster_name', 'all') != 'all':
                 prompt = "[" + config_properties.get('cluster_name') + "] " + prompt
 
-            user_input = raw_input(prompt)
+            user_input = raw_input(base_prompt + prompt)
 
             if user_input.strip() == "":
                 continue
@@ -468,6 +518,54 @@ def process(username, password, admin_url, get_thread_dumps=False, interactive_m
 
     disconnect()
 
+def menu():
+
+    global environment_properties
+    global current_environment_id
+
+    load_environment_properties()
+
+    # Menu loop to select environment
+    while True:
+        env_entry_by_index = {}
+        print("\n\n### Select environment to connect:")
+        for index, env_id in enumerate(environment_properties.keys()):
+            env_entry_by_index[str(index + 1)] = env_id
+            print("\n" + str(index + 1) + ": " + env_id + " (" + environment_properties[env_id].get('admin_server_url', 'no admin_server_url defined') + ", " + environment_properties[env_id].get('user_name', 'no user_name defined') + ", " + environment_properties[env_id].get('environment_name', 'no environment_name defined') + ")")
+        print("\n0: Exit")
+        env_selection = raw_input("\nEnter selection (index or environment ID): ")
+        if env_selection == "0":
+            print("Exiting.")
+            break
+        elif env_selection in env_entry_by_index:
+            current_environment_id = env_entry_by_index[env_selection]
+        elif env_selection in environment_properties:
+            current_environment_id = env_selection
+        else:
+            print("Invalid selection. Please try again.\n")
+            continue
+
+        env_properties = environment_properties[current_environment_id]
+        print("\nYou have selected environment: " + current_environment_id + " (" + env_properties.get('admin_server_url', 'no admin_server_url defined') + ", " + env_properties.get('user_name', 'no user_name defined') + ", " + env_properties.get('environment_name', 'no environment_name defined') + ")\n")  
+
+        print("\nEnter password for user '" + env_properties.get('user_name', 'no user_name defined') + "': ")
+
+        password = subprocess.check_output(['./read_input.sh']).strip()
+
+        if password.strip() == "":
+            print("Password cannot be empty. Please try again.\n")
+            continue
+        else:
+
+            try:
+                process(env_properties.get('user_name'), password, env_properties.get('admin_server_url'), interactive_mode=True)
+            except Exception as e:
+                print("Error in environment '" + current_environment_id + "': " + str(e))
+                print("\n")
+                if config_properties.get('debug_mode', 'false').lower() == 'true':
+                    import traceback
+                    traceback.print_exc()
+
 if __name__ == "__main__":    
     parser = argparse.ArgumentParser(description='Check WebLogic domain status.')
     parser.add_argument('--admin_url', help='Admin server URL')
@@ -481,6 +579,12 @@ if __name__ == "__main__":
     username = args.username
     password = args.password
     get_thread_dumps = args.get_thread_dumps
+
     interactive_mode = args.interactive
 
-    process(username, password, admin_url, get_thread_dumps, interactive_mode)
+    if interactive_mode and (admin_url is None or username is None or password is None):
+        menu()
+    elif admin_url and username and password:
+        process(username, password, admin_url, get_thread_dumps, interactive_mode)
+    else:
+        print("Admin URL, username and password must be provided when not in interactive mode. Use --help for more information.")
