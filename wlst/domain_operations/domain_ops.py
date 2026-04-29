@@ -143,14 +143,18 @@ def get_server_status_report(server):
                 dataSourceName = dataSource.getName()
                 if (testPool == None):
                     status_report += '\n\n    ' + dataSourceName+'\t'+dataSource.getState()+'\n\n'
-                    status_report += "      CurrCapacity                  " + str(dataSource.getCurrCapacity()) + "\n"
-                    status_report += "      ConnectionsTotalCount         " + str(dataSource.getConnectionsTotalCount()) + "\n"
-                    status_report += "      ConnectionDelayTime           " + str(dataSource.getConnectionDelayTime()) + "\n"
-                    status_report += "      ActiveConnectionsAverageCount " + str(dataSource.getActiveConnectionsAverageCount()) + "\n"
-                    status_report += "      ActiveConnectionsCurrentCount " + str(dataSource.getActiveConnectionsCurrentCount()) + "\n"
-                    status_report += "      ActiveConnectionsHighCount    " + str(dataSource.getActiveConnectionsHighCount()) + "\n"
-                    status_report += "      FailuresToReconnectCount      " + str(dataSource.getFailuresToReconnectCount()) + "\n"
-                    status_report += "      LeakedConnectionCount         " + str(dataSource.getLeakedConnectionCount()) + "\n"
+                    status_report += "      CurrCapacity                      " + str(dataSource.getCurrCapacity()) + "\n"
+                    status_report += "      ConnectionsTotalCount             " + str(dataSource.getConnectionsTotalCount()) + "\n"
+                    status_report += "      ConnectionDelayTime               " + str(dataSource.getConnectionDelayTime()) + "\n"
+                    status_report += "      ActiveConnectionsAverageCount     " + str(dataSource.getActiveConnectionsAverageCount()) + "\n"
+                    status_report += "      NumAvailable                      " + str(dataSource.getNumAvailable()) + "\n"
+                    status_report += "      ActiveConnectionsCurrentCount     " + str(dataSource.getActiveConnectionsCurrentCount()) + "\n"
+                    status_report += "      ActiveConnectionsHighCount        " + str(dataSource.getActiveConnectionsHighCount()) + "\n"
+                    status_report += "      FailuresToReconnectCount          " + str(dataSource.getFailuresToReconnectCount()) + "\n"
+                    status_report += "      LeakedConnectionCount             " + str(dataSource.getLeakedConnectionCount()) + "\n"
+                    status_report += "      WaitingForConnectionCurrentCount  " + str(dataSource.getWaitingForConnectionCurrentCount()) + "\n"
+                    status_report += "      WaitingForConnectionHighCount     " + str(dataSource.getWaitingForConnectionHighCount()) + "\n"
+                    status_report += "      WaitSecondsHighCount              " + str(dataSource.getWaitSecondsHighCount()) + "\n"
                 else:
                     status_report += '\n\n    ' + dataSourceName+'\t'+dataSource.getState()+'\tFailure: '
                     status_report += str(testPool)
